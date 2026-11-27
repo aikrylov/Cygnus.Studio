@@ -44,6 +44,21 @@ namespace Cynosura.Studio.Core.Requests.Entities
             var solutionAccessor = new SolutionAccessor(solution.Path);
             var entity = _mapper.Map<CreateEntity, Generator.Models.Entity>(request);
             entity.Id = Guid.NewGuid();
+            entity.Name = entity.Name.ToPascalCase();
+            entity.PluralName = entity.PluralName.ToPascalCase();
+            foreach (var field in entity.Fields)
+            {
+                field.Name = field.Name.ToPascalCase();
+            }
+            if (entity.BaseEntityId == null && !entity.IsAbstract)
+            {
+                var baseEntity = (await solutionAccessor.GetEntitiesAsync())
+                    .FirstOrDefault(e => e.Name == "BaseEntity");
+                if (baseEntity != null)
+                {
+                    entity.BaseEntityId = baseEntity.Id;
+                }
+            }
             await solutionAccessor.CreateEntityAsync(entity);
             // reload Entity from Solution
             entity = (await solutionAccessor.GetEntitiesAsync())
